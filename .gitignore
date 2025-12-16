@@ -1,0 +1,7 @@
+env
+__pycache__
+.env
+.roo
+.venv
+tg_bot_config.py
+agent.log
