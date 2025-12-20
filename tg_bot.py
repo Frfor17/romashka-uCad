@@ -3,10 +3,8 @@ import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import httpx
+from tg_bot_config import TELEGRAM_BOT_TOKEN, FASTAPI_URL
 
-# Настройки
-TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"  # Получи у @BotFather
-FASTAPI_URL = "http://localhost:8001"  # URL твоего FastAPI сервера
 
 # Настройка логирования
 logging.basicConfig(
@@ -140,6 +138,36 @@ async def create_cylinder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Ошибка: {str(e)}")
 
+
+async def create_test_cube(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Создать тестовый куб (сам откроет документ)"""
+    size = context.args[0] if context.args else "10"
+    
+    try:
+        size_float = float(size)
+        if size_float <= 0:
+            await update.message.reply_text("❌ Размер должен быть больше 0")
+            return
+            
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{FASTAPI_URL}/api/cad/create-test-shape",
+                params={"shape_type": "cube", "size": size_float}
+            )
+            data = response.json()
+            
+            await update.message.reply_text(
+                f"✅ Тестовый куб создан!\n"
+                f"Размер: {size_float}мм\n"
+                f"Файл: {data.get('details', {}).get('file', 'Неизвестно')}\n"
+                f"Результат: {data.get('message', 'Успешно')}"
+            )
+    except ValueError:
+        await update.message.reply_text("❌ Размер должен быть числом")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка: {str(e)}")
+
+
 async def create_shape(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Создать любую фигуру"""
     if len(context.args) < 2:
@@ -236,7 +264,7 @@ def main():
     application.add_handler(CommandHandler("sphere", create_sphere))
     application.add_handler(CommandHandler("cylinder", create_cylinder))
     application.add_handler(CommandHandler("create", create_shape))
-    
+    application.add_handler(CommandHandler("test_cube", create_test_cube))
     # Обработка текстовых сообщений
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
