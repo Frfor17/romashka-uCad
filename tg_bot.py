@@ -150,21 +150,36 @@ async def create_test_cube(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
             
         async with httpx.AsyncClient() as client:
+            full_url = f"{FASTAPI_URL}/api/cad/create-test-shape"
+            logger.info(f"Запрос к URL: {full_url}")
+            logger.info(f"Параметры: shape_type=cube, size={size_float}")
+            logger.info(f"FASTAPI_URL = {FASTAPI_URL}")
             response = await client.get(
-                f"{FASTAPI_URL}/api/cad/create-test-shape",
+                full_url,
                 params={"shape_type": "cube", "size": size_float}
             )
-            data = response.json()
+            logger.info(f"Ответ от сервера: статус {response.status_code}")
+            logger.info(f"Текст ответа: {response.text}")
             
-            await update.message.reply_text(
-                f"✅ Тестовый куб создан!\n"
-                f"Размер: {size_float}мм\n"
-                f"Файл: {data.get('details', {}).get('file', 'Неизвестно')}\n"
-                f"Результат: {data.get('message', 'Успешно')}"
-            )
+            if response.status_code == 200:
+                data = response.json()
+                logger.info(f"JSON ответа: {data}")
+                
+                await update.message.reply_text(
+                    f"✅ Тестовый куб создан!\n"
+                    f"Размер: {size_float}мм\n"
+                    f"Файл: {data.get('details', {}).get('file', 'Неизвестно')}\n"
+                    f"Результат: {data.get('message', 'Успешно')}\n"
+                    f"Статус ответа: {response.status_code}"
+                )
+            else:
+                logger.error(f"Ошибка сервера: {response.status_code} - {response.text}")
+                await update.message.reply_text(f"❌ Ошибка сервера: {response.status_code}")
+                
     except ValueError:
         await update.message.reply_text("❌ Размер должен быть числом")
     except Exception as e:
+        logger.error(f"Ошибка при запросе: {str(e)}")
         await update.message.reply_text(f"❌ Ошибка: {str(e)}")
 
 
