@@ -20,7 +20,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Доступные команды:\n"
         "/status - статус MCP сервера\n"
         # "/docs - получить документы\n"
-        "/test_cube [размер] - создать Тест куб (по умолчанию 10мм)\n"
+        "/create_cube [размер] - создать Куб (по умолчанию 10мм)\n"
         # "/sphere [размер] - создать сферу\n"
         # "/cylinder [размер] - создать цилиндр\n"
         # "/create [тип] [размер] - создать фигуру\n\n"
@@ -173,11 +173,11 @@ async def create_test_cube(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_document(
                 document=file_response.content,
                 filename=filename,
-                caption=f"✅ Тестовый куб создан!\nРазмер: {size_float}мм"
+                caption=f"✅ Куб создан!\nРазмер: {size_float}мм"
             )
             
             await update.message.reply_text(
-                f"✅ Тестовый куб создан!\n"
+                f"✅ Куб создан!\n"
                 f"Размер: {size_float}мм\n"
                 f"Файл: {data.get('details', {}).get('file', 'Неизвестно')}\n"
                 f"Результат: {data.get('message', 'Успешно')}"
@@ -284,7 +284,7 @@ def main():
     # application.add_handler(CommandHandler("sphere", create_sphere))
     # application.add_handler(CommandHandler("cylinder", create_cylinder))
     # application.add_handler(CommandHandler("create", create_shape))
-    application.add_handler(CommandHandler("test_cube", create_test_cube))
+    application.add_handler(CommandHandler("create_cube", create_test_cube))
     # Обработка текстовых сообщений
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
