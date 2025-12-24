@@ -155,6 +155,20 @@ async def create_test_cube(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 params={"shape_type": "cube", "size": size_float}
             )
             data = response.json()
+
+            # 2. Получаем имя файла из ответа
+            filename = data.get('details', {}).get('file', 'cube.stl')
+            download_url = f"{FASTAPI_URL}/api/cad/download/{filename}"
+            
+            # 3. Скачиваем файл в память
+            file_response = await client.get(download_url)
+            
+            # 4. Отправляем файл пользователю
+            await update.message.reply_document(
+                document=file_response.content,
+                filename=filename,
+                caption=f"✅ Тестовый куб создан!\nРазмер: {size_float}мм"
+            )
             
             await update.message.reply_text(
                 f"✅ Тестовый куб создан!\n"
