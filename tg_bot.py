@@ -223,16 +223,16 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📋 Доступные команды:\n"
         "/start - начать работу\n"
-        "/status - статус сервера\n"
-        "/docs - получить документы\n"
-        "/cube [размер] - создать куб\n"
-        "/sphere [размер] - создать сферу\n"
-        "/cylinder [размер] - создать цилиндр\n"
-        "/create [тип] [размер] - создать фигуру\n\n"
-        "Примеры:\n"
-        "/cube 15\n"
-        "/sphere 20\n"
-        "/create cylinder 10"
+        # "/status - статус сервера\n"
+        # "/docs - получить документы\n"
+        "/test_cube [размер] - создать тестовый кубы куб\n"
+        # "/sphere [размер] - создать сферу\n"
+        # "/cylinder [размер] - создать цилиндр\n"
+        # "/create [тип] [размер] - создать фигуру\n\n"
+        # "Примеры:\n"
+        # "/cube 15\n"
+        # "/sphere 20\n"
+        # "/create cylinder 10"
     )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -257,13 +257,13 @@ def main():
     
     # Регистрируем обработчики команд
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("status", get_status))
-    application.add_handler(CommandHandler("docs", get_documents))
-    application.add_handler(CommandHandler("cube", create_cube))
-    application.add_handler(CommandHandler("sphere", create_sphere))
-    application.add_handler(CommandHandler("cylinder", create_cylinder))
-    application.add_handler(CommandHandler("create", create_shape))
+    # application.add_handler(CommandHandler("help", help_command))
+    # application.add_handler(CommandHandler("status", get_status))
+    # application.add_handler(CommandHandler("docs", get_documents))
+    # application.add_handler(CommandHandler("cube", create_cube))
+    # application.add_handler(CommandHandler("sphere", create_sphere))
+    # application.add_handler(CommandHandler("cylinder", create_cylinder))
+    # application.add_handler(CommandHandler("create", create_shape))
     application.add_handler(CommandHandler("test_cube", create_test_cube))
     # Обработка текстовых сообщений
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
