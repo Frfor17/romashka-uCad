@@ -1,10 +1,11 @@
-import asyncio
-import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+import asyncio # не знаю, вроде не испольузуется, поправьте меня
+import logging  # библа для логов, чтобы легче дебагать было
+from telegram import Update # сама библа для тг бота
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes # сама библа для тг бота
 import httpx
-from tg_bot_config import TELEGRAM_BOT_TOKEN, FASTAPI_URL
-
+from tg_bot_config import TELEGRAM_BOT_TOKEN, FASTAPI_URL # токены и прочее для связи
+import sqlite3 # первичная бд, где храним всякое, пока чисто юзеров
+from datetime import datetime # тип данных, где-то "рядом с" или "в" бд используется
 
 # Настройка логирования
 logging.basicConfig(
@@ -12,6 +13,70 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+DB_NAME = 'bot_users.db'  # Имя файла базы
+
+# Создание БД при первом запуске
+def init_db():  # создаём функцию для ну, для бд, инициализации бд
+    conn = sqlite3.connect(DB_NAME) # делаем подключение через функцию connect
+    cur = conn.cursor() 
+    # если есть файл с DB_NAME именем, то к нему подрубаемся, если нет, то новый делаем
+
+    # Проверяем, есть ли уже таблица
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+    table_exists = cur.fetchone() # курсор - это объект для выполнения sql команд
+    # как сказал дипсик, и к сожалению лучше я не скажу:
+    # если conn - это тоннель к бд, то cur это грузовик, который возит SQL запросы туда, и
+    # и результаты обратно
+
+    if table_exists:  # если таблицы нет, то как бы да, чисто проверка
+        print(f"Таблица 'users' уже существует в {DB_NAME}")
+    else:
+        print(f"Создаю таблицу 'users' в {DB_NAME}")
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY,
+                username TEXT,
+                first_name TEXT,
+                last_name TEXT,
+                first_seen DATETIME,
+                last_seen DATETIME
+            )
+        ''')
+        conn.commit() # коммит - это физическая запись изменений на диск, на жёсткий полагаю, хз, типо наверн до этого оно хранится в оперативке
+        print("Таблица создана успешно") # тут выполняет SQL-запрос, для создания бд как видите
+    conn.close() # закрывает файловый дескриптор файла DB_NAME, освобождает память занятую объктом Connection
+
+# чисто следить сколько вообще пользователей есть
+# Функция для записи/обновления пользователя
+def log_user(user):  # ну создаём функцию, в аргументе надо отправить Id Или чёто такое как видите
+    # курсор и коннект, как в прошлом буквально
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    
+    # Проверяем, есть ли пользователь уже в базе
+    cur.execute('SELECT user_id FROM users WHERE user_id = ?', (user.id,)) # проверяем, мб он уже есть
+    exists = cur.fetchone() # получает первую строку или none
+
+    # логика обновления и вставки
+    
+    if exists:
+        # Обновляем время последнего визита
+        cur.execute('''
+            UPDATE users 
+            SET last_seen = ?, username = ?, first_name = ?, last_name = ?
+            WHERE user_id = ?
+        ''', (datetime.now(), user.username, user.first_name, user.last_name, user.id)) # дейтам время автоматом в строку сохраняет
+    else:
+        # Добавляем нового пользователя
+        cur.execute('''
+            INSERT INTO users (user_id, username, first_name, last_name, first_seen, last_seen)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (user.id, user.username, user.first_name, user.last_name, datetime.now(), datetime.now()))
+    
+    # ну комит клоуз в прошлом разбирали
+    conn.commit()
+    conn.close()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /start"""
@@ -142,6 +207,8 @@ async def create_cylinder(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def create_test_cube(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Создать тестовый куб (сам откроет документ)"""
     size = context.args[0] if context.args else "10"
+
+    log_user(message.from_user)
     
     try:
         size_float = float(size)
@@ -255,9 +322,25 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # "/create cylinder 10"
     )
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):  #эта функция, когда боту пишут любое текст сообщение
+    # как видите, функция получается Update, то есть объект, который тг отправляет в функцию
+    # в объекте Update лежит вся инфа, контент сообщения имя пользователя и вообще всё что надо
+    # второй арг - Context это реально контекст, это типо не апдайт, а именно контекст
+    # внутри контекст хранится такое малое хранилище данных, локальное, чё вообще происходит, не точечно, а в общем и целом
     """Обработка текстовых сообщений"""
-    text = update.message.text.lower()
+    text = update.message.text.lower()  # тут присаивание переменной, из аргумента Update
+    # который передали в функцию, мы достаём подобъект message.text и не просто достаёт, а сразу делаем lower()
+    # и короче это ну, делает сообщение из малых символов, и сохраняем в переменную text
+
+    log_user(update.message.from_user) # тут вызывается функция связанна с бд
+    # в аргументе как видите, мы берём из Update имя юзера и сохраняем
+    # чисто сделано чтобы считать, сколько и кто юзает бота, без доп инфы, чисто имя
+
+
+
+    # снизу просто простейшая логика команд начальная, надо переделать
+    # типо оно говорит особую фразу, если у тебя есть привет и другие особые фразы, также вызывает команды вроде, если у тебя особые слова
+    # ну бред короче, надо переделать
     
     if "привет" in text or "hello" in text:
         await update.message.reply_text("Привет! Напиши /help чтобы увидеть команды")
@@ -293,4 +376,5 @@ def main():
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
+    init_db()
     main()

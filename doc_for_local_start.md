@@ -1,15 +1,15 @@
 короче, надо запустить локально всё это? вот описание
 
-python3 -m venv env
-Set-ExecutionPolicy Unrestricted -Scope Process
-env\Scripts\Activate
+python3 -m venv env     это команда чисто в начале и тем кто тока скачала билд чтобы установить вирт окружение
+Set-ExecutionPolicy Unrestricted -Scope Process   это каждый раз когда врубает репо, надо врубить
+env\Scripts\Activate  и активировать вирт окружение
 
 
 для запуска
 
 
 
-uvicorn main:app --reload
+uvicorn main:app --reload   команда для запуска фастапи бэка
 
 для запуска бота
 
