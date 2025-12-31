@@ -5,3 +5,4 @@ __pycache__
 .venv
 tg_bot_config.py
 agent.log
+bot_users.db
