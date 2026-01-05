@@ -348,6 +348,8 @@ async def create_test_shape_endpoint(
             detail=f"Ошибка при создании тестовой фигуры: {str(e)}"
         )
 
+@app.get("/reward_url")
+
 @app.get("/")
 async def root():
     return {
