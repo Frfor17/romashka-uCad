@@ -349,6 +349,7 @@ async def create_test_shape_endpoint(
         )
 
 @app.get("/reward_url")
+async def
 
 @app.get("/")
 async def root():
