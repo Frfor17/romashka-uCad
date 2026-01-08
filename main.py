@@ -348,8 +348,13 @@ async def create_test_shape_endpoint(
             detail=f"Ошибка при создании тестовой фигуры: {str(e)}"
         )
 
-@app.get("/reward_url")
-async def
+@app.get("/reward")
+async def process_reward(
+    request: Request,
+    user_id: int = Query(...),
+    _: bool = Depends(verify_by_ip)
+):
+    ...
 
 @app.get("/")
 async def root():
