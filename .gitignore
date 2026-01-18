@@ -6,3 +6,4 @@ __pycache__
 tg_bot_config.py
 agent.log
 bot_users.db
+money.py
